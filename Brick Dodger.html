@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<title>Brick Dodger</title>
+<meta charset="utf-8">
+</head>
+<body onload="startGame()">
+<style>
+canvas { background-color : black }
+</style>
+<script>
+alert("See How Long You Can Last. Press Enter When You're Ready.");
+// Beta Test Phase Needs Sound And Music.
+var myGamePiece;
+var myObstacles = [];
+var myScore;
+
+function startGame() {
+    myGamePiece = new component(45, 45, "white", 10, 120); // The white square.
+	myScore = new component("30px", "Arial", "white", 280, 40, "text");
+	myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"), // Creates a canvas element.
+    start : function() { //This creates the game area.
+        this.canvas.width = 720;
+        this.canvas.height = 400;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+		this.frameNo = 0
+		this.interval = setInterval(updateGameArea, 20);
+		// The window object allows the user to use their keypad as a controller.
+		window.addEventListener('keydown',function(e){
+			myGameArea.keys = (myGameArea.keys || []);
+			myGameArea.keys[e.keyCode] = true;
+		})
+		window.addEventListener('keyup',function(e){
+			myGameArea.keys[e.keyCode] = false;
+		})
+    },
+	clear : function(){
+		this.context.clearRect(0,0, this.canvas.width, this.canvas.height);
+	},
+	stop : function() { // Game over logic
+		clearInterval(this.interval);
+	}
+}
+function component(width, height, color, x, y, type) {
+    this.type = type;
+	this.width = width;
+    this.height = height;
+    this.x = x; // Starting X position
+    this.y = y; // Starting Y position
+	this.speedX = 0; // X Postion Changer
+	this.speedY = 0; // Y Postion Changer
+	this.update = function(){ // The component is being updated to move within the game area.
+		ctx = myGameArea.context;
+		if (this.type == "text"){
+			ctx.font = this.width + " " + this.height;
+			ctx.fillStyle = color;
+			ctx.fillText(this.text, this.x, this.y);
+		} else {
+			ctx.fillStyle = color;
+			ctx.fillRect(this.x, this.y, this.width, this.height);
+		}
+	}
+	this.newPos = function(){ // Function that allows game piece movement.
+		this.x += this.speedX; // Usefull for gaming on a 2d platformer, Scenic Game.
+		this.y += this.speedY; // Usefu;ll for left to right game play (Flappy Bird, Non Movement gameplay).
+	}
+	this.crashWith = function(otherobj){
+		var myleft = this.x;
+		var myright = this.x + (this.width);
+		var mytop = this.y;
+		var mybottom = this.y + (this.height);
+		var otherleft = otherobj.x;
+		var otherright = otherobj.x + (otherobj.width);
+		var othertop = otherobj.y;
+		var otherbottom = otherobj.y + (otherobj.height);
+		var crash = true;
+		if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)){
+			crash = false;
+		}
+		return crash;
+	}
+}
+
+function updateGameArea(){ // This draws the game piece 50 times per second
+	var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+	for (i = 0; i < myObstacles.length; i += 1){
+		if (myGamePiece.crashWith(myObstacles[i])){ // This ends the game if the game piece touches the obstacle.
+			myGameArea.stop();
+			alert("Game Over, restart the browser to play again.");
+			return;
+		}
+	}
+	myGameArea.clear(); // Clearing the game area will allow the component to be drawn without leaving a trail.
+	myGameArea.frameNo += 1; // Moves the walls to the left.
+	if (myGameArea.frameNo == 1 || everyinterval(150)){
+		x = myGameArea.canvas.width;
+		minHeight = 20;
+		maxHeight = 200;
+		height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
+		minGap = 50;
+		maxGap = 200;
+		gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
+		myObstacles.push(new component(10, height, "white", x, 0));
+		myObstacles.push(new component(10, x - height - gap, "white", x, height + gap));
+	}
+	for (i = 0; i < myObstacles.length; i += 1){
+		myObstacles[i].x += -2;
+		myObstacles[i].newPos();
+		myObstacles[i].update();
+	}
+	myGamePiece.speedX = 0;
+	myGamePiece.speedY = 0;  
+	if (myGameArea.keys && myGameArea.keys[37]) {myGamePiece.speedX = -2;} //Slow Down
+	if (myGameArea.keys && myGameArea.keys[39]) {myGamePiece.speedX = 2;} // Speed Up
+	if (myGameArea.keys && myGameArea.keys[38]) {myGamePiece.speedY = -2;} // Increase Height
+	if (myGameArea.keys && myGameArea.keys[40]) {myGamePiece.speedY = 2;} // Decrease Height
+	myScore.text = "SCORE: " + myGameArea.frameNo;
+	myScore.update();
+	myGamePiece.newPos(); // This regeisters player movement.
+	myGamePiece.update(); // This updates the game piece onto the game area.
+}
+function everyinterval(n){
+	if ((myGameArea.frameNo / n) % 1 == 0){return true;}
+	return false;
+}
+
+</script>
+<h1>Use your keyboard to dodge the walls.</h1>
+<p>UP, DOWN (SELF EXPLANITORY) LEFT TO SLOW DOWN, RIGHT TO SPEED UP</p>
+</body>
+</html>
